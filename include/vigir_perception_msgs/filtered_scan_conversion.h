@@ -43,11 +43,12 @@ static inline bool convertCompressedToFilteredScan(const vigir_perception_msgs::
   output.header.frame_id = "/world";
   output.header.stamp = input.stamp;
 
-  output.processed_scan.header.stamp = scan_properties.header.stamp;
+  output.processed_scan.header.frame_id = scan_properties.header.frame_id;
   output.processed_scan.header.stamp = input.stamp;
 
-  output.processed_scan.angle_min = scan_properties.angle_min;
-  output.processed_scan.angle_max = scan_properties.angle_max;
+  output.processed_scan.angle_min = input.angle_min;
+  output.processed_scan.angle_max = input.angle_max;
+
   output.processed_scan.angle_increment = scan_properties.angle_increment;
   output.processed_scan.time_increment = scan_properties.time_increment;
   output.processed_scan.scan_time = scan_properties.scan_time;
@@ -78,6 +79,18 @@ static inline bool convertCompressedToFilteredScan(const vigir_perception_msgs::
       self_filtered_scan_points[i] = std::numeric_limits<float>::quiet_NaN();
     }
   }
+
+  if (input.intensities.size() > 0){
+
+    output.processed_scan.intensities.resize(1);
+
+    size_t intensity_size = input.intensities.size();
+    output.processed_scan.intensities[0].echoes.resize(intensity_size);
+
+    for (size_t i = 0; i < intensity_size; ++i){
+      output.processed_scan.intensities[0].echoes[i] = (static_cast<float>(input.intensities[i]) * 40.0f);
+    }
+  }
   
   output.transform_first_ray = input.transform_first_ray;
   output.transform_last_ray  = input.transform_last_ray;
@@ -94,6 +107,9 @@ static inline bool convertFilteredToCompressedScan (const vigir_perception_msgs:
     return false;
 
   output.stamp = input.header.stamp;
+
+  output.angle_max = input.processed_scan.angle_max;
+  output.angle_min = input.processed_scan.angle_min;
 
   u_int16_t max_range = static_cast<u_int16_t>(input.processed_scan.range_max * 1000.0f);
 
@@ -117,6 +133,17 @@ static inline bool convertFilteredToCompressedScan (const vigir_perception_msgs:
       }
     }else{
       output.scan[i] = static_cast<u_int16_t>(range_preprocessed * 1000.0f);
+    }
+  }
+
+  if (input.processed_scan.intensities.size() > 0){
+
+    size_t intensity_size = input.processed_scan.intensities[0].echoes.size();
+
+    output.intensities.resize (intensity_size);
+
+    for (size_t i = 0; i < intensity_size; ++i){
+      output.intensities[i] = static_cast<uint8_t>(std::min(input.processed_scan.intensities[0].echoes[i],10000.0f) / 40.0f);
     }
   }
 

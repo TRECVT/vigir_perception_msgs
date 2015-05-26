@@ -9,6 +9,10 @@ uint16 INVALID = 65535
 # Scan start timestamp
 time stamp
 
+# We split scans, so have to specify min/max angle
+float32 angle_min
+float32 angle_max
+
 # Scan data discretized to millimeters.
 # The following conventions apply:
 # 0 < value < max_range: valid scan point
